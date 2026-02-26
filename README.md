@@ -123,17 +123,21 @@ For each advisor and each availability window:
 
 Break buffers are applied per booking type — 5 minutes after a Type A call, 10 minutes after a Type B call. This means slots always start at clean boundaries after existing appointments.
 
+---
+
 **Hold expiry across restarts — trade-off**
-`setTimeout` callbacks die when the process restarts. Any held bookings at the time of restart would stay in `held` status forever with no timer to expire them. In production I would use a job queue like BullMQ or a database-level TTL to handle expiry reliably across restarts and multiple instances.
+`setTimeout` callbacks die when the process restarts. Any held bookings at the time of restart would stay in `held` status forever with no timer to expire them. In production I would use BullMQ or a database-level TTL cron job to handle expiry reliably across restarts and multiple instances.
 
 **Race conditions — trade-off**
 In a single-process setup JavaScript's event loop provides natural serialisation — two requests cannot truly run simultaneously. In a multi-process production deployment, two requests could find the same slot free and both create bookings. The fix is a database transaction with a unique constraint on `(advisorId, startTime)` with status in `('held', 'confirmed')`.
 
 **In-memory storage — trade-off**
-State is lost on every restart. Acceptable for a local demo, not for production. The service layer is deliberately storage-agnostic — `bookingService` and `slotService` call functions and never touch the store directly in a way that would be hard to swap. Replacing `store.ts` with a repository pattern backed by PostgreSQL would not require changes to any service file.
+State is lost on every restart. Acceptable for a local demo, not for production. The service layer is deliberately storage-agnostic — replacing `store.ts` with a repository pattern backed by PostgreSQL would not require changes to any service file.
 
 **No authentication — trade-off**
 The IA passes their `advisorId` in the confirm request body as a stand-in for real auth. In production this would come from a JWT token — I would add an auth middleware that extracts the advisor identity from `req.user` before it reaches the route handler.
+
+---
 
 **What I would improve/add with more time**
 - Proper JWT authentication with advisor and candidate roles
