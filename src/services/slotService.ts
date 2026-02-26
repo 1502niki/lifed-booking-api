@@ -30,20 +30,28 @@ export function getAvailableSlots(visaType: VisaType, advisorId?: string): Avail
         const slotEnd = addMinutes(slotStart, visaDef.durationMinutes);
 
         const blockedSlots = activeBookings.find(b => {
-          const breakBuffer = VisaTypeDef[b.visaType].breakAfterMinutes;
-          const breakEnd = addMinutes(b.endTime, breakBuffer);
+        const slotOverlapsBooking = slotStart < b.endTime && slotEnd > b.startTime;
 
-          const slotOverlapsBooking = slotStart < b.endTime && slotEnd > b.startTime;
-          //Strech
-          const slotIsInBreakPeriod = slotStart >= b.endTime && slotStart < breakEnd;
+        if (b.status === 'held') {
+          return slotOverlapsBooking;  
+        }
 
-          return slotOverlapsBooking || slotIsInBreakPeriod;
-        });
+        //strech
+        const breakBuffer = VisaTypeDef[b.visaType].breakAfterMinutes;
+        const breakEnd = addMinutes(b.endTime, breakBuffer);
+        const slotIsInBreakPeriod = slotStart >= b.endTime && slotStart < breakEnd;
+
+        return slotOverlapsBooking || slotIsInBreakPeriod;
+      });
+
 
         if (blockedSlots) {
-          const breakBuffer = VisaTypeDef[blockedSlots.visaType].breakAfterMinutes;
-          //Strech
-          slotStart = addMinutes(blockedSlots.endTime, breakBuffer);
+          if (blockedSlots.status === 'confirmed') {
+            const breakBuffer = VisaTypeDef[blockedSlots.visaType].breakAfterMinutes;
+            slotStart = addMinutes(blockedSlots.endTime, breakBuffer);
+          } else {
+            slotStart = new Date(blockedSlots.endTime.getTime());
+          }
         } else {
           slots.push({
             advisorId: advisor.id,
