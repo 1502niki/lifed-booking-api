@@ -137,10 +137,10 @@ State is lost on every restart. Acceptable for a local demo, not for production.
 **No authentication**
 The IA passes their `advisorId` in the confirm request body as a stand-in for real auth. In production this would come from a JWT token — I would add an auth middleware that extracts the advisor identity from `req.user` before it reaches the route handler.
 
-**What I would add with more time**
+**What I would improve/add with more time**
 - Proper JWT authentication with advisor and candidate roles
 - PostgreSQL for persistent storage
 - BullMQ/Database TTL for reliable hold expiry across restarts
-- Idempotency keys on booking creation to prevent duplicate requests
 - Pagination on `GET /bookings`
 - A `DELETE /waitlist/:id ` withdraw from waitlist
+- Jest unit tests focused on the slot calculation algorithm — specifically testing held and confirmed bookings block slots correctly, break buffers push the next slot start to the right time, and expired bookings release slots back into availability
